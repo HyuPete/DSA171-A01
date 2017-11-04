@@ -41,35 +41,121 @@ struct L1Item {
 
 template <class T>
 class L1List {
-    L1Item<T>   *_pHead;// The head pointer of linked list
-    size_t      _size;// number of elements in this list
+	L1Item<T>   *_pHead;// The head pointer of linked list
+	size_t      _size;// number of elements in this list
 public:
-    L1List() : _pHead(NULL), _size(0) {}
-    ~L1List();
+	L1List() : _pHead(NULL), _size(0) {}
+	~L1List()
+	{
+		clean();
+		delete _pHead;
+	}
 
-    void    clean();
-    bool    isEmpty() {
-        return _pHead == NULL;
-    }
-    size_t  getSize() {
-        return _size;
-    }
+	void    clean()
+	{
+		while (removeHead() == 0) { continue; }
+		return;
+	}
+	bool    isEmpty() {
+		return _pHead == NULL;
+	}
+	size_t  getSize() {
+		return _size;
+	}
 
-    T&      at(int i);
-    T&      operator[](int i);
+	T&      at(int i)
+	{
+		if (!_pHead) throw DSAException(1, "Empty list!");
+		if (i<0 || i> _size - 1) throw DSAException(2, "Invalid index!");
+		L1Item<T> *p{ _pHead };
+		while (true)
+		{
+			if (i == 0) return p->data;
+			p = p->pNext; i--;
+			if (!p) throw DSAException(3, "Out of bound!");
+		}
+	}
+	T&      operator[](int i)
+	{
+		if (!_pHead) throw DSAException(1, "Empty list!");
+		if (i<0 || i> _size - 1) throw DSAException(2, "Invalid index!");
+		L1Item<T> *p{ _pHead };
+		while (true)
+		{
+			if (i == 0) return p->data;
+			p = p->pNext; i--;
+			if (!p) throw DSAException(3, "Out of bound!");
+		}
+	}
 
-    bool    find(T& a, int& idx);
-    int     insert(int i, T& a);
-    int     remove(int i);
+	// find the element having the target data, return true/false
+	// idx will be assigned to the index of the found element for future access
+	// if not found idx = -1
+	bool    find(T &a, int &idx)
+	{
+		if (!_pHead) throw DSAException(3, "Empty list!");
+		L1Item<T> *p{ _pHead };
+		idx = 0;
+		while (p)
+		{
+			if (p->data == a) return 1;
+			p = p->pNext; idx++;
+		}
+		idx = -1;
+		return 0;
+	}
+	// insert a item after the the item with index i
+	// return 0 if success
+	int     insert(int i, T &a)
+	{
+		if (!_pHead) throw DSAException(1, "Empty list!");
+		if (i < 0 || i >_size - 1) throw DSAException(2, "Invalid index!");
+		L1Item<T> *p{ _pHead };
+		while (true)
+		{
+			if (i == 0)
+			{
+				L1Item<T> *pNew{ new L1Item<T>(a) };
+				pNew->pNext = p->pNext;
+				p->pNext = pNew;
+				return 0;
+			}
+			p = p->pNext; i--;
+			if (!p) throw DSAException(3, "Out of bound!");
+		}
+	}
+	// remove node past this one
+	// return 0 if success
+	int     remove(int i)
+	{
+		if (!_pHead) throw DSAException(1, "Empty list!");
+		if (i < 0 || i >_size - 1) throw DSAException(2, "Invalid index!");
+		L1Item<T> *p{ _pHead };
+		while (true)
+		{
+			if (i == 0)
+			{
+				L1Item<T> *pDel{ p->pNext };
+				p->pNext = p->pNext->pNext;
+				delete pDel;
+				return 0;
+			}
+			p = p->pNext; i--;
+			if (!p) throw DSAException(3, "Out of bound!");
+		}
+	}
 
-    int     push_back(T& a);
-    int     insertHead(T& a);
+	int     push_back(T& a); // implemention below
+	int     insertHead(const T &a); // implemention below
 
-    int     removeHead();
-    int     removeLast();
-
-    void    reverse();
-
+    int     removeHead(); // implemention below
+    int     removeLast(); // implemention below
+	
+	// call the hiden function reverse implemented by recursion
+	void reverse()
+	{
+		reverse(_pHead); return;
+	}
     void    traverse(void (*op)(T&)) {
         L1Item<T>   *p = _pHead;
         while (p) {
@@ -84,6 +170,26 @@ public:
             p = p->pNext;
         }
     }
+protected:
+		// reverse the list by recursion
+		// parameter 'int i' to mark whether or not pH are pointing to the original head item of the list (true when i = 0)
+		void    reverse(L1Item<T> *pH, int i = 0)
+		{
+			if (!pH)
+			{
+				cerr << "\nEmpty list cannot be reversed!\n";
+				return;
+			}
+			if (!pH->pNext)
+			{
+				_pHead = pH;
+				return;
+			}
+			reverse(pH->pNext, 1);
+			pH->pNext->pNext = pH;
+			if (i == 0) pH->pNext = nullptr;
+			return;
+		}
 };
 
 /// Insert item to the end of the list
