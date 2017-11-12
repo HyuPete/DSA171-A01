@@ -11,8 +11,29 @@
 
 #include "eventLib.h"
 
-
 /// NOTE: each event will be separated by spaces, or endline character
 void loadEvents(char* fName, L1List<ninjaEvent_t> &eList) {
 	//TODO    
+	fstream inF(fName);
+	if (!inF)
+	{
+		cerr << "\nCannot open the file for reading!\n";
+		return;
+	}
+	else
+	{	
+		string str;
+		stringstream buf;
+		getline(inF, str, ';');
+		inF.close();
+		buf << str;
+		while (!buf.eof())
+		{
+			buf >> str;
+			ninjaEvent_t n(str);
+			eList.push_back(n);
+		}
+	}
+	return;
 }
+

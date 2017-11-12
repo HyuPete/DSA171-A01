@@ -34,3 +34,4 @@
 *.DS_Store
 cmake-build-debug/*
 *.idea*
+/.vs/DSA171-A01/v15/Browse.VC.opendb

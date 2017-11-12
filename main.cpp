@@ -14,20 +14,23 @@ void display(L1List<NinjaInfo_t>& nList) {
 }
 
 int main(int narg, char** argv) {
-	L1List<int> L;
-	int a{ 2 };
-	L.insertHead(a);
-	L.insert(0, a);
-	L.clean();
-    //L1List<ninjaEvent_t>  eventList;
-    //L1List<NinjaInfo_t>   db;// database of NinjaInfo
-    //loadEvents(argv[1], eventList);
-    //loadNinjaDB(argv[2], db);
+	
+	clock_t start = clock();
+   
+	L1List<ninjaEvent_t>  eventList;
+    L1List<NinjaInfo_t>   db;// database of NinjaInfo
+    loadEvents(argv[1], eventList);
+    loadNinjaDB(argv[2], db);
 
-    //cout << fixed << setprecision(12);// preset for floating point numbers
-    ///// Process events
-    //process(eventList, db);
+    cout << fixed << setprecision(12);// preset for floating point numbers
+    /// Process events
+    process(eventList, db);
 
-    //cout << resetiosflags(ios::showbase) << setprecision(-1);
+    cout << resetiosflags(ios::showbase) << setprecision(-1);
+	
+	// caculate executing time (second)
+	clock_t stop = clock();
+	double elapsed{ static_cast<double>(stop - start) * 1000.0 / CLOCKS_PER_SEC };
+	cout << elapsed << '\n';
     return 0;
 }

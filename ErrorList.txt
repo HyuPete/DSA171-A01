@@ -1,3 +1,4 @@
 1. Empty list
 2. Invalid index
 3. Out of bound
+4. There is no item after the last item in the list to be removed
