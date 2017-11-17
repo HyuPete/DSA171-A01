@@ -37,6 +37,7 @@ struct L1Item {
     L1Item<T> *pNext;
     L1Item() : pNext(NULL) {}
     L1Item(T &a) : data(a), pNext(NULL) {}
+	L1Item(char *a){} // using for type char
 };
 
 template <class T>
@@ -47,6 +48,7 @@ class L1List {
 public:
 	L1List() : _pHead(NULL), pTail(nullptr), _size(0) {}
 	L1List(T &a) :_pHead{ new L1Item<T>(a) }, _size{ 1 } { pTail = _pHead; }
+	L1List(T *a) {}
 	// copy constructor
 	L1List(L1List<T> &L): L1List()
 	{
@@ -75,6 +77,8 @@ public:
 	}
 	L1Item<T>* getHead() { return _pHead; }
 	L1Item<T>* getTail() { return pTail; }
+	// decrease size, be carefull to use this one
+	void decreaseSizeBy1() { _size--; }
 
 	// access list member, i = 0..(_size - 1)
 	T&      at(int i)
@@ -137,6 +141,8 @@ public:
 			return 0;
 		}
 	}
+	// return true/false, if not found idx = -1
+	bool find(char *ch, int &idx);
 	// insert a item after the the item with index i
 	// return 0 if success
 	int     insert(int i, T &a)
@@ -196,10 +202,10 @@ public:
 			return -1;
 		}
 	}
-
+	// remove node past this one
 	int     push_back(T &a); // implement below
 	int     insertHead(T &a); // implement below
-
+	int insertHead(char *a) {} // using for type char[]
 	/// Remove the first item of the list
 	/// Return 0 if success
 	int     removeHead() // implement below
@@ -269,6 +275,8 @@ public:
 	void traverseAndInsert(T &a) {}
 	// special traverse funtction for list ninjaInfo
 	void traverse(L1List<L1List<T>> &lL){}
+	// if not found idx = -1
+	const char* traverseAndRemove(char *killerID, int &targetIndex) {}
 	// overload operator
 	
 protected:
@@ -342,10 +350,11 @@ int L1List<T>::removeLast() {
             }
             delete pcur;
             prev->pNext = NULL;
+			pTail = prev;
         }
         else {
             delete _pHead;
-            _pHead = NULL;
+			_pHead = pTail = NULL;
         }
         _size--;
         return 0;

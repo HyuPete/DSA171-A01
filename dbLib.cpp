@@ -22,15 +22,43 @@
 
 using namespace std;
 
-// structure for global data
-struct PointerToGData
+struct PointOnEarth
 {
-	L1List<ninjaEvent_t> pLE;        // copy list of events for reprint
-	L1List<L1List<NinjaInfo_t>> pLL; // list of lists
-	char *c;                         // sorted ninja's ID array
-	double *totalDistance;           // total distance of traveling array
-	time_t *totalUnmovedTime; // array of total unmoved time of each ninja
-
+	double longt{ 0.0 }, lat{ 0.0 };
+	PointOnEarth(double a, double b) :longt{ a }, lat{ b } {}
+};
+// structure for global data
+class PointerToGData
+{
+public:
+	// attributes
+	L1List<ninjaEvent_t> pLE;                                 // copy list of events list for reprint
+	L1List<L1List<NinjaInfo_t>> pLL;                          // list of lists
+	double *totalDistance{ nullptr };                         // total distance of traveling array
+	time_t *totalUnmovingTime{ nullptr };                     // array of total unmoved time of each ninja
+	size_t *numOfTimesUnmoving{ nullptr };					  // array of the number of times each ninja unmove 
+	time_t *firstTimeMoving{ nullptr };                       // array of each ninja's first time moving
+	time_t *lastTimeUnmoving{ nullptr };                      // array of each ninja's last time unmoving
+	time_t *totalMovingTime{ nullptr };                       // array of each ninja's total moving time
+															  // methods
+	PointerToGData() {}
+	~PointerToGData();
+	const char* findMaxID();
+	const char* findAndKill(char *killerID);
+	void statisticizeData(); // Ninjas'data statistic
+	const char* findFirstTimeMovingOf(char *ninjaID);
+	const char* findLastTimeUnmovingOf(char *ninjaID);
+	int findNumberOfUnmovingTimesOf(char *ninjaID);
+	string findSumOfTravelingDistanceOf(char *ninjaID);
+	const char* findMaxTrvlDist();
+	const char* findMaxTrvlTime();
+	const char* findMaxUnmovingTime();
+	void findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
+	// friend function
+	friend bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
+	friend bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F);
+	friend bool checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E);
+private:
 };
 
 void    strPrintTime(char *des, time_t &t) {
@@ -63,19 +91,20 @@ void loadNinjaDB(char *fName, L1List<NinjaInfo_t> &db) {
 			if (str[0] == '\n' || str[0] == '\r' || str.empty()) continue;
 			getline(dbFile, str, ','); // "Report time"
 			buf << str;
-			buf >> in;
-			t.tm_mon = in - 1; // month [0-11]
-			buf.ignore(); // discard '/'
-			buf >> t.tm_mday; // day
-			buf.ignore(); // discard '/'
-			buf >> in;
-			t.tm_year = in - 1900; // number of years from 1900
-			buf.ignore(); // discard ' '
-			buf >> t.tm_hour;
-			buf.ignore(); // discard ':'
-			buf >> t.tm_min;
-			buf.ignore(); // discard ':'
-			buf >> t.tm_sec;
+			//buf >> in;
+			//t.tm_mon = in - 1; // month [0-11]
+			//buf.ignore(); // discard '/'
+			//buf >> t.tm_mday; // day
+			//buf.ignore(); // discard '/'
+			//buf >> in;
+			//t.tm_year = in - 1900; // number of years from 1900
+			//buf.ignore(); // discard ' '
+			//buf >> t.tm_hour;
+			//buf.ignore(); // discard ':'
+			//buf >> t.tm_min;
+			//buf.ignore(); // discard ':'
+			//buf >> t.tm_sec;
+			buf >> get_time(&t, "%m/%d/%Y %H:%M:%S");
 			n.timestamp = mktime(&t); // convert from tm to time_t
 			buf.str("");
 			buf.clear();
@@ -84,16 +113,18 @@ void loadNinjaDB(char *fName, L1List<NinjaInfo_t> &db) {
 			strcpy(n.id, str.data());
 			// handle longitude
 			getline(dbFile, str, ','); // Longitude
-			buf << str;
-			buf >> n.longitude;
-			buf.str("");
-			buf.clear();
+			//buf << str;
+			//buf >> n.longitude;
+			//buf.str("");
+			//buf.clear();
+			n.longitude = stod(str);
 			// handle latitude
 			getline(dbFile, str, ','); // Latitude
-			buf << str;
+			/*buf << str;
 			buf >> n.latitude;
 			buf.str("");
-			buf.clear();
+			buf.clear();*/
+			n.latitude = stod(str);
 			getline(dbFile, str); // read the rest of the line
 			db.push_back(n);
 			//printNinjaInfo(n);
@@ -113,16 +144,19 @@ bool parseNinjaInfo(char* pBuf, NinjaInfo_t& nInfo) {
 void traverse(L1List<L1List<NinjaInfo>> &L, NinjaInfo &a);
 void traverse(L1List<NinjaInfo> &lN, L1List<L1List<NinjaInfo>> &lL);
 void printListNinja(L1List<NinjaInfo> &l);
+
 // function process called by main to execute the whole program
 void process(L1List<ninjaEvent_t> &eventList, L1List<NinjaInfo_t> &bList) {
-    void*   pGData = NULL;
+    void *pGData = NULL;
 	if (initNinjaGlobalData(&pGData))
-	{
+	{	
+		PointerToGData *p{ static_cast<PointerToGData*>(pGData) };
 		// copy list eventList
-		eventList.traverse(static_cast<PointerToGData*>(pGData)->pLE);
+		eventList.traverse(p->pLE);
 		// create a list of lists of each ninja's data
-		traverse(bList, static_cast<PointerToGData*>(pGData)->pLL);
-		static_cast<PointerToGData*>(pGData)->pLL.traverse(printListNinja);
+		traverse(bList, p->pLL);
+		//p->pLL.traverse(printListNinja);
+		p->statisticizeData();
 	}
     while (!eventList.isEmpty()) {
         if(!processEvent(eventList[0], bList, pGData))
@@ -136,8 +170,16 @@ void process(L1List<ninjaEvent_t> &eventList, L1List<NinjaInfo_t> &bList) {
 bool initNinjaGlobalData(void* *pGData) {
     /// TODO: You should define this function if you would like to use some extra data
     /// the data should be allocated and pass the address into pGData
-	*pGData = new PointerToGData();
-    return true;
+	try
+	{
+		*pGData = new PointerToGData();
+		return true;
+	}
+	catch (const std::exception& e)
+	{
+		cerr << '\n' << e.what() << '\n';
+		return 0;
+	}
 }
 
 void releaseNinjaGlobalData(void *pGData) {
