@@ -81,7 +81,7 @@ void loadNinjaDB(char *fName, L1List<NinjaInfo_t> &db) {
 		stringstream buf;
 		string str;
 		tm t;
-		int in;
+		//int in;
 		getline(dbFile, str); // discard the first line
 		while (!dbFile.eof())
 		{

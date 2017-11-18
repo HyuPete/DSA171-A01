@@ -136,7 +136,7 @@ public:
 		}
 		catch (DSAException &e)
 		{
-			cerr << '\n' << e.getError() << ": " << e.getErrorText << '\n';
+			cerr << '\n' << e.getError() << ": " << e.getErrorText() << '\n';
 			idx = -1;
 			return 0;
 		}
@@ -168,7 +168,7 @@ public:
 		}
 		catch (DSAException &e)
 		{
-			cerr << '\n' << e.getError() << ": " << e.getErrorText << '\n';
+			cerr << '\n' << e.getError() << ": " << e.getErrorText() << '\n';
 			return -1;
 		}
 	}
@@ -198,7 +198,7 @@ public:
 		}
 		catch (DSAException &e)
 		{
-			cerr << '\n' << e.getError() << ": " << e.getErrorText << '\n';
+			cerr << '\n' << e.getError() << ": " << e.getErrorText() << '\n';
 			return -1;
 		}
 	}
