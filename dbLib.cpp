@@ -110,7 +110,8 @@ void loadNinjaDB(char *fName, L1List<NinjaInfo_t> &db) {
 			buf.clear();
 			// handle ninja id
 			getline(dbFile, str, ','); // Ninja tag
-			strcpy(n.id, str.data());
+			if (str.length() < 4) strcpy(n.id, str.insert(0, 4 - str.length(), '0').data());
+			else strcpy(n.id, str.data());
 			// handle longitude
 			getline(dbFile, str, ','); // Longitude
 			//buf << str;

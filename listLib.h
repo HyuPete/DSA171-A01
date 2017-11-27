@@ -49,6 +49,7 @@ public:
 	L1List() : _pHead(NULL), pTail(nullptr), _size(0) {}
 	L1List(T &a) :_pHead{ new L1Item<T>(a) }, _size{ 1 } { pTail = _pHead; }
 	L1List(T *a) {}
+	L1List(char a){}
 	// copy constructor
 	L1List(L1List<T> &L): L1List()
 	{
@@ -204,11 +205,13 @@ public:
 	}
 	// remove node past this one
 	int     push_back(T &a); // implement below
+	int push_back(char *a) {} // using for type char[]
 	int     insertHead(T &a); // implement below
+	void insertHead(char){}
 	int insertHead(char *a) {} // using for type char[]
 	/// Remove the first item of the list
 	/// Return 0 if success
-	int     removeHead() // implement below
+	int     removeHead()
 	{
 		if (_pHead) {
 			if (pTail == _pHead) pTail = nullptr;

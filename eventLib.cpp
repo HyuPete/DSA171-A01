@@ -27,10 +27,11 @@ void loadEvents(char* fName, L1List<ninjaEvent_t> &eList) {
 		getline(inF, str, ';');
 		inF.close();
 		buf << str;
+		ninjaEvent n;
 		while (!buf.eof())
 		{
 			buf >> str;
-			ninjaEvent_t n(str);
+			strncpy(n.code, str.c_str(), EVENT_CODE_SIZE - 1);
 			eList.push_back(n);
 		}
 	}

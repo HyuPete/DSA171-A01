@@ -155,6 +155,7 @@ public:
 	const char* findMaxTrvlTime();
 	const char* findMaxUnmovingTime();
 	void findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
+	void findAndPrintListOfNinjasLost();
 	// friend function
 	friend bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
 	friend bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F);
@@ -203,15 +204,8 @@ const char* L1List<L1List<NinjaInfo>>::traverseAndRemove(char *killerID, int &ta
 	if (!_pHead) { targetIndex = -1;  return "-1"; }
 	// find out whether the killer exist
 	L1Item<L1List<NinjaInfo>> *p{ _pHead }, *pPreTarget{ nullptr }, *pPre{ nullptr };
-	//if (!p->pNext) { strcpy(target, "-1"); return 0; } // List has only 1 item
-	bool isKillerExist{ 0 }, isTargetExist{ 0 };
-	/*if (strcmp(p->data[0].id, killerID) < 0)
-	{
-	targetID = p->data[0].id;
-	isTargetExist = 1;
-	}
-	auto *pPre{ p };*/
-	char *target = new char[ID_MAX_LENGTH]; //{""}: doesn't work in C++11
+	bool isTargetExist{ 0 };
+	char *target{ new char[ID_MAX_LENGTH] }; //{""}: doesn't work in C++11
 	strcpy( target , "" );
 	size_t index{ 0 };
 	while (true)
@@ -225,10 +219,10 @@ const char* L1List<L1List<NinjaInfo>>::traverseAndRemove(char *killerID, int &ta
 			if (!isTargetExist) isTargetExist = 1;
 			targetIndex = index;
 		}
-		else if (cmp == 0) isKillerExist = 1;
+		//else if (cmp == 0) isKillerExist = 1;
 		if (!p->pNext)
 		{
-			if (!isKillerExist || !isTargetExist) { delete target; targetIndex = -1; return "-1"; }
+			if (!isTargetExist) { delete target; targetIndex = -1; return "-1"; }
 			// killing
 			if (!pPreTarget) removeHead();  // target is head
 			else if (!pPreTarget->pNext->pNext) // target is tail
@@ -466,7 +460,7 @@ const char* PointerToGData::findMaxUnmovingTime()
 	{
 		if (totalUnmovingTime[i] > maxUnmovingTime)
 		{
-			maxUnmovingTime = totalMovingTime[i];
+			maxUnmovingTime = totalUnmovingTime[i];
 			mostUnmovingNinjaID = p->data[0].id;
 		}
 		p = p->pNext;
@@ -475,89 +469,90 @@ const char* PointerToGData::findMaxUnmovingTime()
 	return mostUnmovingNinjaID;
 }
 //##########################
-// AB & CD
-bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D) 
-{
-	// using cross product method ( [AB, BC] )
-	double abc{ (B.longt - A.longt)*(C.lat - B.lat) - (C.longt - B.longt)*(B.lat - A.lat) };
-	double abd{ (B.longt - A.longt)*(D.lat - B.lat) - (D.longt - B.longt)*(B.lat - A.lat) };
-	if (abc < epsilon && abc >= 0) // if A, B, C are collinear => abc = 0
-	{
-		if ((C.lat - A.lat)*(C.lat - B.lat) < epsilon && (C.longt - A.longt)*(C.longt - B.longt) < epsilon) // if ((yC - yA)(yC - yB)) <= 0
-			return 1; // if AB // Ox
-		else if (abd < epsilon && abd >= 0) // if A, B, D are collinear
-		{
-			if ((D.lat - A.lat)*(D.lat - B.lat) < epsilon && (D.longt - A.longt)*(D.longt - B.longt) < epsilon) // if ((yD - yA)(yD - yB)) <= 0
-				return 1;
-			else if ((D.lat - A.lat)*(C.lat - A.lat) < 0 || (D.longt - A.longt)*(C.longt - A.longt) < 0)
-				return 1; // AB is a part of CD
-			else return 0; // A, B, C, D are all collinear but the two line segments do not intersect
-		}
-		else return 0;
-	}
-	if (abd < epsilon && abd >=0) // if A, B, D are collinear
-	{
-		if ((D.lat - A.lat)*(D.lat - B.lat) < epsilon && (D.longt - A.longt)*(D.longt - B.longt) < epsilon) // if ((yD - yA)(yD - yB)) <= 0
-			return 1;
-		else return 0;
-	}
-	double cda{ (D.longt - C.longt)*(A.lat - D.lat) - (A.longt - D.longt)*(D.lat - C.lat) };
-	double cdb{ (D.longt - C.longt)*(B.lat - D.lat) - (B.longt - D.longt)*(D.lat - C.lat) };
-	if (cda >= 0 && cda < epsilon) // C, D, A are collinear
-	{
-		if ((A.lat - C.lat)*(A.lat - D.lat) < epsilon && (A.longt - C.longt)*(A.longt - D.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if (cdb >= 0 && cdb < epsilon) // C, D, B are collinear
-	{
-		if ((B.lat - C.lat)*(B.lat - D.lat) < epsilon && (B.longt - C.longt)*(B.longt - D.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if (abc*abd < 0 && cda * cdb < 0) // (A, B, C) , (A, B, D) differ in orientation and so do (C, D, A) & (C, D, B).
-		return 1;
-	return 0;
-}
-// square ABCD, line segment EF
-bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F) // square ABCD, line segment EF
-{
-	return checkIfTowGivenLineSegmentsIntersect(A, B, E, F) || checkIfTowGivenLineSegmentsIntersect(B, C, E, F) || checkIfTowGivenLineSegmentsIntersect(C, D, E, F) || checkIfTowGivenLineSegmentsIntersect(D, A, E, F);
-}
-bool checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E)
-{
-	double abe ((B.longt - A.longt)*(E.lat - B.lat) - (E.longt - B.longt)*(B.lat - A.lat));
-	double bce ((C.longt - B.longt)*(E.lat - C.lat) - (E.longt - C.longt)*(C.lat - B.lat));
-	double cde ((D.longt - C.longt)*(E.lat - D.lat) - (E.longt - D.longt)*(D.lat - C.lat));
-	double dae ((A.longt - D.longt)*(E.lat - A.lat) - (E.longt - A.longt)*(A.lat - D.lat));
-	if (abe >= 0 && abe < epsilon)
-	{
-		if ((E.lat - A.lat)*(E.lat - B.lat) < epsilon && (E.longt - A.longt)*(E.longt - B.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if (bce >= 0 && bce < epsilon)
-	{
-		if ((E.lat - B.lat)*(E.lat - C.lat) < epsilon && (E.longt - B.longt)*(E.longt - C.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if (cde >= 0 && cde < epsilon)
-	{
-		if ((E.lat - C.lat)*(E.lat - D.lat) < epsilon && (E.longt - C.longt)*(E.longt - D.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if (dae >= 0 && dae < epsilon)
-	{
-		if ((E.lat - D.lat)*(E.lat - A.lat) < epsilon && (E.longt - D.longt)*(E.longt - A.longt) < epsilon)
-			return 1;
-		else return 0;
-	}
-	if ((abe >= epsilon && bce >= epsilon && cde >= epsilon && dae >= epsilon) || (abe < 0 && bce < 0 && cde < 0 && dae < 0)) // if (A,B,E), (B,C,E), (C,D,E), (D,A,E) all have the same orientation
-		return 1; 
-	return 0;
-}
+
+//// AB & CD
+//bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D) 
+//{
+//	// using cross product method ( [AB, BC] )
+//	double abc{ (B.longt - A.longt)*(C.lat - B.lat) - (C.longt - B.longt)*(B.lat - A.lat) };
+//	double abd{ (B.longt - A.longt)*(D.lat - B.lat) - (D.longt - B.longt)*(B.lat - A.lat) };
+//	if (abc < epsilon && abc >= 0) // if A, B, C are collinear => abc = 0
+//	{
+//		if ((C.lat - A.lat)*(C.lat - B.lat) < epsilon && (C.longt - A.longt)*(C.longt - B.longt) < epsilon) // if ((yC - yA)(yC - yB)) <= 0
+//			return 1; // if AB // Ox
+//		else if (abd < epsilon && abd >= 0) // if A, B, D are collinear
+//		{
+//			if ((D.lat - A.lat)*(D.lat - B.lat) < epsilon && (D.longt - A.longt)*(D.longt - B.longt) < epsilon) // if ((yD - yA)(yD - yB)) <= 0
+//				return 1;
+//			else if ((D.lat - A.lat)*(C.lat - A.lat) < 0 || (D.longt - A.longt)*(C.longt - A.longt) < 0)
+//				return 1; // AB is a part of CD
+//			else return 0; // A, B, C, D are all collinear but the two line segments do not intersect
+//		}
+//		else return 0;
+//	}
+//	if (abd < epsilon && abd >=0) // if A, B, D are collinear
+//	{
+//		if ((D.lat - A.lat)*(D.lat - B.lat) < epsilon && (D.longt - A.longt)*(D.longt - B.longt) < epsilon) // if ((yD - yA)(yD - yB)) <= 0
+//			return 1;
+//		else return 0;
+//	}
+//	double cda{ (D.longt - C.longt)*(A.lat - D.lat) - (A.longt - D.longt)*(D.lat - C.lat) };
+//	double cdb{ (D.longt - C.longt)*(B.lat - D.lat) - (B.longt - D.longt)*(D.lat - C.lat) };
+//	if (cda >= 0 && cda < epsilon) // C, D, A are collinear
+//	{
+//		if ((A.lat - C.lat)*(A.lat - D.lat) < epsilon && (A.longt - C.longt)*(A.longt - D.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if (cdb >= 0 && cdb < epsilon) // C, D, B are collinear
+//	{
+//		if ((B.lat - C.lat)*(B.lat - D.lat) < epsilon && (B.longt - C.longt)*(B.longt - D.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if (abc*abd < 0 && cda * cdb < 0) // (A, B, C) , (A, B, D) differ in orientation and so do (C, D, A) & (C, D, B).
+//		return 1;
+//	return 0;
+//}
+//// square ABCD, line segment EF
+//bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F) // square ABCD, line segment EF
+//{
+//	return checkIfTowGivenLineSegmentsIntersect(A, B, E, F) || checkIfTowGivenLineSegmentsIntersect(B, C, E, F) || checkIfTowGivenLineSegmentsIntersect(C, D, E, F) || checkIfTowGivenLineSegmentsIntersect(D, A, E, F);
+//}
+//bool checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E)
+//{
+//	double abe ((B.longt - A.longt)*(E.lat - B.lat) - (E.longt - B.longt)*(B.lat - A.lat));
+//	double bce ((C.longt - B.longt)*(E.lat - C.lat) - (E.longt - C.longt)*(C.lat - B.lat));
+//	double cde ((D.longt - C.longt)*(E.lat - D.lat) - (E.longt - D.longt)*(D.lat - C.lat));
+//	double dae ((A.longt - D.longt)*(E.lat - A.lat) - (E.longt - A.longt)*(A.lat - D.lat));
+//	if (abe >= 0 && abe < epsilon)
+//	{
+//		if ((E.lat - A.lat)*(E.lat - B.lat) < epsilon && (E.longt - A.longt)*(E.longt - B.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if (bce >= 0 && bce < epsilon)
+//	{
+//		if ((E.lat - B.lat)*(E.lat - C.lat) < epsilon && (E.longt - B.longt)*(E.longt - C.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if (cde >= 0 && cde < epsilon)
+//	{
+//		if ((E.lat - C.lat)*(E.lat - D.lat) < epsilon && (E.longt - C.longt)*(E.longt - D.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if (dae >= 0 && dae < epsilon)
+//	{
+//		if ((E.lat - D.lat)*(E.lat - A.lat) < epsilon && (E.longt - D.longt)*(E.longt - A.longt) < epsilon)
+//			return 1;
+//		else return 0;
+//	}
+//	if ((abe >= epsilon && bce >= epsilon && cde >= epsilon && dae >= epsilon) || (abe < 0 && bce < 0 && cde < 0 && dae < 0)) // if (A,B,E), (B,C,E), (C,D,E), (D,A,E) all have the same orientation
+//		return 1; 
+//	return 0;
+//}
 template<>
 L1Item<char[ID_MAX_LENGTH]>::L1Item(char *a) : pNext{ nullptr }
 {
@@ -566,112 +561,171 @@ L1Item<char[ID_MAX_LENGTH]>::L1Item(char *a) : pNext{ nullptr }
 template<>
 int L1List<char[ID_MAX_LENGTH]>::insertHead(char *a)
 {
-	L1Item<char[ID_MAX_LENGTH] > *p = new L1Item<char[ID_MAX_LENGTH]>(a);
+	L1Item<char[ID_MAX_LENGTH]> *p = new L1Item<char[ID_MAX_LENGTH]>(a);
 	p->pNext = _pHead;
 	_pHead = p;
 	if (!pTail) pTail = _pHead;
 	_size++;
 	return 0;
 }
-void PointerToGData::findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D) // the trap is the square ABCD
+//void PointerToGData::findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D) // the trap is the square ABCD
+//{
+//	auto p{ pLL.getHead() };
+//	if (!p) { cout << "-1\n"; return; }
+//	PointOnEarth currP, nxtP;
+//	L1List<char[ID_MAX_LENGTH]> ninjaTrappedList;
+//	while (true)
+//	{
+//		auto pSubList{ p->data.getHead() };
+//		if (pSubList)
+//		{
+//			if (pSubList->pNext) // multi point
+//			{
+//				while (pSubList->pNext)
+//				{
+//					currP.longt = pSubList->data.longitude;
+//					currP.lat   = pSubList->data.latitude;
+//					nxtP.longt  = pSubList->pNext->data.longitude;
+//					nxtP.lat    = pSubList->pNext->data.latitude;
+//					if (checkIfAGivenLineSegmentIntersectAGivenSquare(A, B, C, D, currP, nxtP))
+//					{
+//						char *ch = new char[ID_MAX_LENGTH];
+//						strcpy(ch, pSubList->data.id);
+//						ninjaTrappedList.insertHead(ch);
+//						delete[] ch;
+//						break;
+//					}
+//					pSubList = pSubList->pNext;
+//				}
+//			}
+//			else // single point
+//			{
+//				// check if a point is inside or on the edge of a square
+//				//double maxLongtOfSquare{ A.longt }; // find max longtitude
+//				//if (maxLongtOfSquare < B.longt) maxLongtOfSquare = B.longt;
+//				//if (maxLongtOfSquare < C.longt) maxLongtOfSquare = C.longt;
+//				//if (maxLongtOfSquare < D.longt) maxLongtOfSquare = D.longt;
+//				currP.longt = pSubList->data.longitude; // create a segment
+//				currP.lat = pSubList->data.latitude; // with this point is a head
+//				//nxtP.longt = maxLongtOfSquare; // and the other head is a point on the far right of
+//				//nxtP.lat = currP.lat; // the square with the same ordinate 
+//				//if (checkIfTowGivenLineSegmentsIntersect(A,B,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(B,C,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(C,D,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(D,A,currP, nxtP)) // if the number of intersect times is odd then the point is inside or on the edge of the square
+//				if (checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(A, B, C, D, currP))
+//				{
+//					char *ch = new char[ID_MAX_LENGTH];
+//					strcpy(ch, pSubList->data.id);
+//					ninjaTrappedList.insertHead(ch);
+//					delete[] ch;
+//				}
+//			}
+//		}
+//		if (!p->pNext)
+//		{
+//			if (ninjaTrappedList.isEmpty()) cout << "-1\n";
+//			else
+//			{
+//				do
+//				{
+//					if (ninjaTrappedList.getHead()->pNext) cout << ninjaTrappedList[0] << ' ';
+//					else cout << ninjaTrappedList[0] << '\n';
+//					ninjaTrappedList.removeHead();
+//				} while (!ninjaTrappedList.isEmpty());
+//			}
+//			return;
+//		}
+//		else p = p->pNext;
+//	} 
+//}
+
+//##########################
+template<>
+int L1List<char[ID_MAX_LENGTH]>::push_back(char *a)
+{
+	if (_pHead == NULL) {
+		_pHead = new L1Item<char[ID_MAX_LENGTH]>(a);
+		pTail = _pHead;
+	}
+	else {
+		pTail->pNext = new L1Item<char[ID_MAX_LENGTH]>(a);
+		pTail = pTail->pNext;
+	}
+	_size++;
+	return 0;
+}
+void PointerToGData::findAndPrintListOfNinjasLost()
 {
 	auto p{ pLL.getHead() };
 	if (!p) { cout << "-1\n"; return; }
-	PointOnEarth currP, nxtP;
-	L1List<char[ID_MAX_LENGTH]> ninjaTrappedList;
+	L1List<PointOnEarth> traversingList;
+	L1List<char[ID_MAX_LENGTH]> ninjaLostList;
 	while (true)
 	{
+		// go through a data list of a specific ninja
 		auto pSubList{ p->data.getHead() };
 		if (pSubList)
 		{
-			if (pSubList->pNext) // multi point
+			PointOnEarth coordinate{ pSubList->data.longitude, pSubList->data.latitude };
+			traversingList.insertHead(coordinate);
+			pSubList = pSubList->pNext;
+			while (pSubList)
 			{
-				while (pSubList->pNext)
+				// check whether the point is a moving point
+				coordinate.lat = pSubList->data.latitude; coordinate.longt = pSubList->data.longitude;
+				if (distanceEarth(coordinate.lat, coordinate.longt, traversingList.getTail()->data.lat, traversingList.getTail()->data.longt) - conventionalUnmvDist >= epsilon)
 				{
-					currP.longt = pSubList->data.longitude;
-					currP.lat   = pSubList->data.latitude;
-					nxtP.longt  = pSubList->pNext->data.longitude;
-					nxtP.lat    = pSubList->pNext->data.latitude;
-					if (checkIfAGivenLineSegmentIntersectAGivenSquare(A, B, C, D, currP, nxtP))
+					// scan traversingList for existence of a extremely close point
+					auto pTravL{ traversingList.getHead() };
+					auto pTrvLTail{ traversingList.getTail() };
+					while (!pTravL->pNext)
 					{
-						char *ch = new char[ID_MAX_LENGTH];
-						strcpy(ch, pSubList->data.id);
-						ninjaTrappedList.insertHead(ch);
-						delete[] ch;
-						break;
+						// if found
+						if (distanceEarth(pTrvLTail->data.lat, pTrvLTail->data.longt, pTravL->data.lat, pTravL->data.longt) - conventionalUnmvDist < epsilon)
+						{
+							char *ch = new char[ID_MAX_LENGTH];
+							strcpy(ch, pSubList->data.id);
+							ninjaLostList.push_back(ch);
+							delete[] ch;
+							break;
+						}
+						pTravL = pTravL->pNext;
 					}
-					pSubList = pSubList->pNext;
+					traversingList.push_back(coordinate);
 				}
-			}
-			else // single point
-			{
-				// check if a point is inside or on the edge of a square
-				//double maxLongtOfSquare{ A.longt }; // find max longtitude
-				//if (maxLongtOfSquare < B.longt) maxLongtOfSquare = B.longt;
-				//if (maxLongtOfSquare < C.longt) maxLongtOfSquare = C.longt;
-				//if (maxLongtOfSquare < D.longt) maxLongtOfSquare = D.longt;
-				currP.longt = pSubList->data.longitude; // create a segment
-				currP.lat = pSubList->data.latitude; // with this point is a head
-				//nxtP.longt = maxLongtOfSquare; // and the other head is a point on the far right of
-				//nxtP.lat = currP.lat; // the square with the same ordinate 
-				//if (checkIfTowGivenLineSegmentsIntersect(A,B,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(B,C,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(C,D,currP,nxtP) ^ checkIfTowGivenLineSegmentsIntersect(D,A,currP, nxtP)) // if the number of intersect times is odd then the point is inside or on the edge of the square
-				if (checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(A, B, C, D, currP))
-				{
-					char *ch = new char[ID_MAX_LENGTH];
-					strcpy(ch, pSubList->data.id);
-					ninjaTrappedList.insertHead(ch);
-					delete[] ch;
-				}
+				pSubList = pSubList->pNext;
 			}
 		}
 		if (!p->pNext)
 		{
-			if (ninjaTrappedList.isEmpty()) cout << "-1\n";
+			if (ninjaLostList.isEmpty()) cout << "-1\n";
 			else
 			{
 				do
 				{
-					if (ninjaTrappedList.getHead()->pNext) cout << ninjaTrappedList[0] << ' ';
-					else cout << ninjaTrappedList[0] << '\n';
-					ninjaTrappedList.removeHead();
-				} while (!ninjaTrappedList.isEmpty());
+					if (ninjaLostList.getHead()->pNext) cout << ninjaLostList[0] << ' ';
+					else cout << ninjaLostList[0] << '\n';
+					ninjaLostList.removeHead();
+				} while (!ninjaLostList.isEmpty());
 			}
 			return;
 		}
-		else p = p->pNext;
-	} 
+		p = p->pNext;
+		traversingList.clean();
+	}
 }
 
-//##########################
-
-//template<class T>
-//void merge(T a[], int low, int mid, int high) 
+//template<>
+//L1List<char>::L1List(char a) : _pHead{ new L1Item<char>(a) }, pTail{ _pHead }, _size{ 1 }{}
+//template<>
+//void L1List<char>::insertHead(char a)
 //{
-//	// subarray1 = a[low..mid], subarray2 = a[mid+1..high], both sorted
-//	int N = high - low + 1;
-//	T *b = new T[N]; // discuss: why do we need a temporary array b?
-//	int left = low, right = mid + 1, bIdx = 0;
-//	while (left <= mid && right <= high) // the merging
-//		b[bIdx++] = (a[left] <= a[right]) ? a[left++] : a[right++];
-//	while (left <= mid) b[bIdx++] = a[left++]; // leftover, if any
-//	while (right <= high) b[bIdx++] = a[right++]; // leftover, if any
-//	cout << "\nmerge\n";
-//	//printArray(b, 0, N - 1);
-//	for (int k = 0; k < N; k++) a[low + k] = b[k]; // copy back
-//	delete[] b; // remove the temporary array b
+//	L1Item<char> *p = new L1Item<char>(a);
+//	p->pNext = _pHead;
+//	_pHead = p;
+//	if (!pTail) pTail = _pHead;
+//	_size++;
+//	return;
 //}
-//
-//void mergeSort(int a[], int low, int high) {
-//	// the array to be sorted is a[low..high]
-//	cout << "\nmerge sort\n";
-//	//printArray(a, low, high);
-//	if (low < high) { // base case: low >= high (0 or 1 item)
-//		int mid = (low + high) / 2;
-//		mergeSort(a, low, mid); // divide into two halves
-//		mergeSort(a, mid + 1, high); // then recursively sort them
-//		merge(a, low, mid, high); // conquer: the merge routine
-//	}
-//}
+
 
 
 // function handle envent
@@ -720,7 +774,7 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					case'1': // "11XYZT"
 						if (event.code[6] == 0)
 						{
-							const char *ch = static_cast<PointerToGData*>(pGData)->findAndKill(&(event.code[2])); // result return is in heap
+							const char *ch{ static_cast<PointerToGData*>(pGData)->findAndKill(&(event.code[2])) }; // result return is in heap
 							cout << event.code << ": " << ch << '\n';
 							if (strcmp(ch,"-1") != 0) delete[] ch;
 							return 1;
@@ -742,46 +796,48 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					case'3': // "13ABCDmnpqEFGHuvrs"
 						if (event.code[18] == 0)
 						{
-							PointOnEarth A{ 0.0, 0.0 }, B{ 0.0, 0.0 };
-							{
-								double coordinate[4]{ 0.0, 0.0, 0.0, 0.0 }; //longtA{ 0.0 }, latA{ 0.0 }, longtB{ 0.0 }, latB{ 0.0 }
-								int lat{ static_cast<int>(nList[0].latitude) };
-								int longt{ static_cast<int>(nList[0].longitude) };
-								double coefficient{ 0.1 };
-								for (int i = 2, k = 0; i < 18; i++)
-								{
-									if (isdigit(event.code[i]))
-									{
-										coordinate[k] += static_cast<double>(event.code[i] - '0') * coefficient;
-										if (i % 4 == 1)
-										{
-											if (k % 2 == 0)
-											{
-												if (longt < 0) coordinate[k] = longt - coordinate[k];
-												else coordinate[k] += longt;
-												k++;
-											}
-											else
-											{
-												if (lat < 0) coordinate[k] = lat - coordinate[k];
-												else coordinate[k] += lat;
-												k++;
-											}
-											coefficient = 0.1;
-										}
-										else coefficient *= 0.1;
-									}
-									else return 0;
-								}
-								A.longt = coordinate[0]; A.lat = coordinate[1]; B.longt = coordinate[2]; B.lat = coordinate[3];
-							}
-							PointOnEarth C, D;
-							C.longt = (A.longt + A.lat + B.longt - B.lat) * 0.5;
-							C.lat = (A.lat + B.longt + B.lat - A.longt) * 0.5;
-							D.longt = (A.longt + B.longt + B.lat - A.lat) * 0.5;
-							D.lat = (A.longt + A.lat + B.lat - B.longt) * 0.5;
-							cout << event.code << ": ";
-							static_cast<PointerToGData*>(pGData)->findAndPrintListOfNinjaTrapped(A, C, B, D);
+							for (int i{ 2 }; i < 18; i++)
+								if (!isdigit(event.code[i])) return 0;
+							//PointOnEarth A{ 0.0, 0.0 }, B{ 0.0, 0.0 };
+							//{
+							//	double coordinate[4]{ 0.0, 0.0, 0.0, 0.0 }; //longtA{ 0.0 }, latA{ 0.0 }, longtB{ 0.0 }, latB{ 0.0 }
+							//	int lat{ static_cast<int>(nList[0].latitude) };
+							//	int longt{ static_cast<int>(nList[0].longitude) };
+							//	double coefficient{ 0.1 };
+							//	for (int i = 2, k = 0; i < 18; i++)
+							//	{
+							//		if (isdigit(event.code[i]))
+							//		{
+							//			coordinate[k] += static_cast<double>(event.code[i] - '0') * coefficient;
+							//			if (i % 4 == 1)
+							//			{
+							//				if (k % 2 == 0)
+							//				{
+							//					if (longt < 0) coordinate[k] = longt - coordinate[k];
+							//					else coordinate[k] += longt;
+							//					k++;
+							//				}
+							//				else
+							//				{
+							//					if (lat < 0) coordinate[k] = lat - coordinate[k];
+							//					else coordinate[k] += lat;
+							//					k++;
+							//				}
+							//				coefficient = 0.1;
+							//			}
+							//			else coefficient *= 0.1;
+							//		}
+							//		else return 0;
+							//	}
+							//	A.longt = coordinate[0]; A.lat = coordinate[1]; B.longt = coordinate[2]; B.lat = coordinate[3];
+							//}
+							//PointOnEarth C, D;
+							//C.longt = (A.longt + A.lat + B.longt - B.lat) * 0.5;
+							//C.lat = (A.lat + B.longt + B.lat - A.longt) * 0.5;
+							//D.longt = (A.longt + B.longt + B.lat - A.lat) * 0.5;
+							//D.lat = (A.longt + A.lat + B.lat - B.longt) * 0.5;
+							//cout << event.code << ": ";
+							//static_cast<PointerToGData*>(pGData)->findAndPrintListOfNinjaTrapped(A, C, B, D);
 							return 1;
 						}
 						else
@@ -791,14 +847,16 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					case'4': // "14"
 						if (event.code[2] == 0)
 						{
-
+							cout << event.code << ": ";
+							static_cast<PointerToGData*>(pGData)->findAndPrintListOfNinjasLost();
+							return 1;
 						}
 						else
 						{
 							return 0;
 						}
 					default:
-						break;
+						return 0;
 					}
 				}
 				else
