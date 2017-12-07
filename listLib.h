@@ -31,6 +31,7 @@ public:
     string& getErrorText() { return _text; }
 };
 
+
 template <class T>
 struct L1Item {
     T data;
@@ -143,7 +144,7 @@ public:
 		}
 	}
 	// return true/false, if not found idx = -1
-	bool find(char *ch, int &idx);
+	bool find(char *ch, int &idx) {}
 	// insert a item after the the item with index i
 	// return 0 if success
 	int     insert(int i, T &a)
@@ -207,7 +208,7 @@ public:
 	int     push_back(T &a); // implement below
 	int push_back(char *a) {} // using for type char[]
 	int     insertHead(T &a); // implement below
-	void insertHead(char){}
+	//void insertHead(char){}
 	int insertHead(char *a) {} // using for type char[]
 	/// Remove the first item of the list
 	/// Return 0 if success
@@ -364,5 +365,9 @@ int L1List<T>::removeLast() {
     }
     return -1;
 }
+
+
+
+
 
 #endif //A01_LISTLIB_H

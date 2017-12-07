@@ -28,6 +28,8 @@
 
 #define ID_MAX_LENGTH   10
 
+//#ifndef NINJAINFO
+//#define NINJAINFO
 typedef struct NinjaInfo {
     char    id[ID_MAX_LENGTH];
     time_t  timestamp;
@@ -45,6 +47,7 @@ typedef struct NinjaInfo {
         strcpy(id, ninja.id);
     }
 } NinjaInfo_t;
+//#endif
 
 void    printNinjaInfo(NinjaInfo_t& n);
 void    strPrintTime(char* des, time_t& t);
@@ -53,22 +56,22 @@ void    loadNinjaDB(char* fName, L1List<NinjaInfo_t> &db);
 double  distanceEarth(double lat1d, double lon1d, double lat2d, double lon2d);
 
 inline bool operator==(NinjaInfo_t& lhs, char* rhs) {
-    return strcmp(lhs.id, rhs) == 0;
+	return strcmp(lhs.id, rhs) == 0;
 }
-inline bool operator==(char* lhs, NinjaInfo_t& rhs)  {
-    return strcmp(rhs.id, lhs) == 0;
+inline bool operator==(char* lhs, NinjaInfo_t& rhs) {
+	return strcmp(rhs.id, lhs) == 0;
 }
 inline bool operator==(NinjaInfo_t& lhs, NinjaInfo_t& rhs) {
-    return strcmp(lhs.id, rhs.id) == 0;
+	return strcmp(lhs.id, rhs.id) == 0;
 }
 inline bool operator!=(NinjaInfo_t& lhs, char* rhs) {
-    return !(lhs == rhs);
+	return !(lhs == rhs);
 }
-inline bool operator!=(char* lhs, NinjaInfo_t& rhs)  {
-    return !(rhs == lhs);
+inline bool operator!=(char* lhs, NinjaInfo_t& rhs) {
+	return !(rhs == lhs);
 }
 inline bool operator!=(NinjaInfo_t& lhs, NinjaInfo_t& rhs) {
-    return !(lhs == rhs);
+	return !(lhs == rhs);
 }
 
 bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void* pGData);
@@ -77,5 +80,7 @@ void process(L1List<ninjaEvent_t>& eventList, L1List<NinjaInfo_t>& nList);
 /// NOTE: student may create this function to allocate some global data
 bool initNinjaGlobalData(void** pGData);
 void releaseNinjaGlobalData(void* pGData);
+
+
 
 #endif //A01_DBLIB_H

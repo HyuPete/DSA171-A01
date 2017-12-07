@@ -32,6 +32,7 @@ void loadEvents(char* fName, L1List<ninjaEvent_t> &eList) {
 		{
 			buf >> str;
 			strncpy(n.code, str.c_str(), EVENT_CODE_SIZE - 1);
+			str.clear();
 			eList.push_back(n);
 		}
 	}

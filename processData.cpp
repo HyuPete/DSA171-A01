@@ -7,6 +7,7 @@
 #include "eventLib.h"
 #include "dbLib.h"
 
+
  // removeHead version for List of list
 template<>
 int L1List<L1List<NinjaInfo>>::removeHead()
@@ -23,7 +24,40 @@ int L1List<L1List<NinjaInfo>>::removeHead()
 	}
 	return -1;
 }
- // Traverse in a list of a specific ninja's data and insert new item in ascending order of time
+
+template<>
+L1Item<char[ID_MAX_LENGTH]>::L1Item(char *a) : pNext{ nullptr }
+{
+	strcpy(data, a);
+}
+template<>
+int L1List<char[ID_MAX_LENGTH]>::insertHead(char *a)
+{
+	L1Item<char[ID_MAX_LENGTH]> *p = new L1Item<char[ID_MAX_LENGTH]>(a);
+	p->pNext = _pHead;
+	_pHead = p;
+	if (!pTail) pTail = _pHead;
+	_size++;
+	return 0;
+}
+
+//##########################
+template<>
+int L1List<char[ID_MAX_LENGTH]>::push_back(char *a)
+{
+	if (_pHead == NULL) {
+		_pHead = new L1Item<char[ID_MAX_LENGTH]>(a);
+		pTail = _pHead;
+	}
+	else {
+		pTail->pNext = new L1Item<char[ID_MAX_LENGTH]>(a);
+		pTail = pTail->pNext;
+	}
+	_size++;
+	return 0;
+}
+
+// Traverse in a list of a specific ninja's data and insert new item in ascending order of time
 template<>
 void L1List<NinjaInfo>::traverseAndInsert(NinjaInfo &a)
 {
@@ -61,6 +95,129 @@ void L1List<NinjaInfo>::traverseAndInsert(NinjaInfo &a)
 		pCurr = pCurr->pNext;
 	}
 }
+
+//############################
+// return "-1"/ID
+template<>
+const char* L1List<L1List<NinjaInfo>>::traverseAndRemove(char *killerID, int &targetIndex)
+{
+	if (!killerID) { targetIndex = -1; return "-1"; }
+	if (!_pHead) { targetIndex = -1;  return "-1"; }
+	// find out whether the killer exist
+	L1Item<L1List<NinjaInfo>> *p{ _pHead }, *pPreTarget{ nullptr }, *pPre{ nullptr };
+	bool isTargetExist{ 0 };
+	char *target{ new char[ID_MAX_LENGTH] }; //{""}: doesn't work in C++11
+	strcpy(target, "");
+	size_t index{ 0 };
+	while (true)
+	{
+		char *possibleTarget{ p->data[0].id };
+		int cmp{ strcmp(possibleTarget, killerID) };
+		if (cmp < 0 && strcmp(possibleTarget, target) > 0)
+		{
+			strcpy(target, possibleTarget);
+			pPreTarget = pPre; // save for killing
+			if (!isTargetExist) isTargetExist = 1;
+			targetIndex = index;
+		}
+		//else if (cmp == 0) isKillerExist = 1;
+		if (!p->pNext)
+		{
+			if (!isTargetExist) { delete[] target; targetIndex = -1; return "-1"; }
+			// killing
+			if (!pPreTarget) removeHead();  // target is head
+			else if (!pPreTarget->pNext->pNext) // target is tail
+			{
+				delete pTail; // the process already include cleaning
+				pPreTarget->pNext = nullptr;
+				pTail = pPreTarget;
+				_size--;
+			}
+			else
+			{
+				p = pPreTarget->pNext; // p <-- target
+				pPreTarget->pNext = p->pNext;
+				delete p; // the process already include cleaning
+				_size--;
+			}
+			return target;
+		}
+		pPre = p;
+		p = p->pNext;
+		index++;
+	}
+}
+
+//############################
+template<>
+bool L1List<L1List<NinjaInfo>>::find(char *ninjaID, int &idx)
+{
+	L1Item<L1List<NinjaInfo>> *p{ _pHead };
+	int i{ 0 };
+	while (p)
+	{
+		if (ninjaID == p->data[0]) { idx = i; return 1; }
+		p = p->pNext;
+		i++;
+	}
+	idx = -1;
+	return 0;
+}
+
+// // removeHead version for List of list
+//template<>
+//int L1List<L1List<NinjaInfo>>::removeHead()
+//{
+//	if (_pHead)
+//	{
+//		if (pTail == _pHead) pTail = nullptr;
+//		_pHead->data.clean();
+//		L1Item<L1List<NinjaInfo_t>> *p = _pHead;
+//		_pHead = p->pNext;
+//		delete p;
+//		_size--;
+//		return 0;
+//	}
+//	return -1;
+//}
+// // Traverse in a list of a specific ninja's data and insert new item in ascending order of time
+//template<>
+//void L1List<NinjaInfo>::traverseAndInsert(NinjaInfo &a)
+//{
+//	if (!_pHead)
+//	{
+//		push_back(a);
+//		return;
+//	}
+//	if (a.timestamp <= _pHead->data.timestamp)
+//	{
+//		insertHead(a);
+//		return;
+//	}
+//	if (!_pHead->pNext)
+//	{
+//		push_back(a);
+//		return;
+//	}
+//	L1Item<NinjaInfo> *pCurr{ _pHead->pNext };
+//	L1Item<NinjaInfo> *pPre{ _pHead };
+//	while (1)
+//	{
+//		if (a.timestamp <= pCurr->data.timestamp)
+//		{
+//			pPre->pNext = new L1Item<NinjaInfo>(a);
+//			pPre->pNext->pNext = pCurr;
+//			return;
+//		}
+//		if (a.timestamp > pCurr->data.timestamp && !pCurr->pNext)
+//		{
+//			push_back(a);
+//			return;
+//		}
+//		pPre = pCurr;
+//		pCurr = pCurr->pNext;
+//	}
+//}
 // Traverse the list of list and insert data to the suitable list in ascending order
 void traverse(L1List<L1List<NinjaInfo>> &L, NinjaInfo &a)
 {
@@ -117,7 +274,11 @@ void traverse(L1List<NinjaInfo> &lN, L1List<L1List<NinjaInfo>> &lL)
 }
 
 //using  L1Event = L1List<ninjaEvent_t>;
-void printEvent(L1Item<ninjaEvent_t> *a) { if (a->pNext) cout << a->data.code << ' '; else cout << a->data.code << '\n'; }
+void printEvent(L1Item<ninjaEvent_t> *a)
+{ 
+	if (a->pNext) cout << a->data.code << ' '; 
+	else cout << a->data.code << '\n'; 
+}
 
 // struct for the coordinates
 struct PointOnEarth
@@ -154,13 +315,13 @@ public:
 	const char* findMaxTrvlDist();
 	const char* findMaxTrvlTime();
 	const char* findMaxUnmovingTime();
-	void findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
+	//void findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
 	void findAndPrintListOfNinjasLost();
 	// friend function
-	friend bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
-	friend bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F);
-	friend bool checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E);
-private:
+	//friend bool checkIfTowGivenLineSegmentsIntersect(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D);
+	//friend bool checkIfAGivenLineSegmentIntersectAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E, PointOnEarth &F);
+	//friend bool checkIfAPointIsInsideOrOnTheEdgeOfAGivenSquare(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D, PointOnEarth &E);
+//private:
 };
 
 PointerToGData::~PointerToGData()
@@ -178,7 +339,7 @@ const char* PointerToGData::findMaxID()
 	try
 	{
 		L1Item<L1List<NinjaInfo>> *p{ pLL.getHead() };
-		if (!p) { return "-1"; }
+		if (!p) { return "empty"; }
 		char *maxID{ p->data[0].id };
 		p = p->pNext;
 		while (p)
@@ -192,59 +353,59 @@ const char* PointerToGData::findMaxID()
 	catch (DSAException &e)
 	{
 		cerr << '\n' << e.getError() << ": " << e.getErrorText() << '\n';
-		return "-1";
+		return "empty";
 	}
 }
-//############################
-// return "-1"/ID
-template<>
-const char* L1List<L1List<NinjaInfo>>::traverseAndRemove(char *killerID, int &targetIndex)
-{
-	if (!killerID) { targetIndex = -1; return "-1"; }
-	if (!_pHead) { targetIndex = -1;  return "-1"; }
-	// find out whether the killer exist
-	L1Item<L1List<NinjaInfo>> *p{ _pHead }, *pPreTarget{ nullptr }, *pPre{ nullptr };
-	bool isTargetExist{ 0 };
-	char *target{ new char[ID_MAX_LENGTH] }; //{""}: doesn't work in C++11
-	strcpy( target , "" );
-	size_t index{ 0 };
-	while (true)
-	{
-		char *possibleTarget{ p->data[0].id };
-		int cmp{ strcmp(possibleTarget, killerID) };
-		if (cmp < 0 && strcmp(possibleTarget, target) > 0)
-		{
-			strcpy(target, possibleTarget);
-			pPreTarget = pPre; // save for killing
-			if (!isTargetExist) isTargetExist = 1;
-			targetIndex = index;
-		}
-		//else if (cmp == 0) isKillerExist = 1;
-		if (!p->pNext)
-		{
-			if (!isTargetExist) { delete target; targetIndex = -1; return "-1"; }
-			// killing
-			if (!pPreTarget) removeHead();  // target is head
-			else if (!pPreTarget->pNext->pNext) // target is tail
-			{
-				delete pTail; // the process already include cleaning
-				pPreTarget->pNext = nullptr;
-				pTail = pPreTarget;
-			}
-			else
-			{
-				p = pPreTarget->pNext; // p <-- target
-				pPreTarget->pNext = p->pNext;
-				delete p; // the process already include cleaning
-			}
-			_size--;
-			return target;
-		}
-		pPre = p;
-		p = p->pNext;
-		index++;
-	}
-}
+////############################
+//// return "-1"/ID
+//template<>
+//const char* L1List<L1List<NinjaInfo>>::traverseAndRemove(char *killerID, int &targetIndex)
+//{
+//	if (!killerID) { targetIndex = -1; return "-1"; }
+//	if (!_pHead) { targetIndex = -1;  return "-1"; }
+//	// find out whether the killer exist
+//	L1Item<L1List<NinjaInfo>> *p{ _pHead }, *pPreTarget{ nullptr }, *pPre{ nullptr };
+//	bool isTargetExist{ 0 };
+//	char *target{ new char[ID_MAX_LENGTH] }; //{""}: doesn't work in C++11
+//	strcpy( target , "" );
+//	size_t index{ 0 };
+//	while (true)
+//	{
+//		char *possibleTarget{ p->data[0].id };
+//		int cmp{ strcmp(possibleTarget, killerID) };
+//		if (cmp < 0 && strcmp(possibleTarget, target) > 0)
+//		{
+//			strcpy(target, possibleTarget);
+//			pPreTarget = pPre; // save for killing
+//			if (!isTargetExist) isTargetExist = 1;
+//			targetIndex = index;
+//		}
+//		//else if (cmp == 0) isKillerExist = 1;
+//		if (!p->pNext)
+//		{
+//			if (!isTargetExist) { delete[] target; targetIndex = -1; return "-1"; }
+//			// killing
+//			if (!pPreTarget) removeHead();  // target is head
+//			else if (!pPreTarget->pNext->pNext) // target is tail
+//			{
+//				delete pTail; // the process already include cleaning
+//				pPreTarget->pNext = nullptr;
+//				pTail = pPreTarget;
+//			}
+//			else
+//			{
+//				p = pPreTarget->pNext; // p <-- target
+//				pPreTarget->pNext = p->pNext;
+//				delete p; // the process already include cleaning
+//			}
+//			_size--;
+//			return target;
+//		}
+//		pPre = p;
+//		p = p->pNext;
+//		index++;
+//	}
+//}
 // return true/false, refernece parameter is referrenced to a copy of found ID which should be deallocated
 const char* PointerToGData::findAndKill(char *killerID)
 {
@@ -292,26 +453,27 @@ const double epsilon{ 1e-12 }, conventionalUnmvDist{5e-3};
 void PointerToGData::statisticizeData()
 {
 	if (pLL.isEmpty()) return;
-	auto s{ pLL.getSize() };
+	size_t s{ pLL.getSize() };
 	totalDistance      = new double[s]();
 	totalUnmovingTime  = new time_t[s]();
 	numOfTimesUnmoving = new size_t[s]();
 	firstTimeMoving    = new time_t[s]();
 	lastTimeUnmoving   = new time_t[s]();
 	totalMovingTime    = new time_t[s]();
-	auto p{ pLL.getHead() };
+	L1Item<L1List<NinjaInfo>> *p{ pLL.getHead() };
 	// traverse and statisticize
 	for (size_t i = 0; i < s; i++)
 	{
-		auto pBegin{ p->data.getHead() }; // save for finding first time moving
-		auto plist{ pBegin }; // for traversing
+		L1Item<NinjaInfo> *pBegin{ p->data.getHead() }; // save for finding first time moving
+		firstTimeMoving[i] = pBegin->data.timestamp;
+		L1Item<NinjaInfo> *plist{ pBegin }; // for traversing
 		L1Item<NinjaInfo> *pCurrTUnmv{ pBegin }; // the beginning of current unmoving period
 		//lastTimeUnmoving[i] = pBegin->data.timestamp; // temporary first time unmoving
 		bool isMoving{ 1 };
 		while (plist->pNext)
 		{
 			// check for first time moving
-			if (firstTimeMoving[i] == 0)
+			if (firstTimeMoving[i] == pBegin->data.timestamp && !isMoving && totalMovingTime[i] == 0)
 			{
 				if (distanceEarth(pBegin->data.latitude, pBegin->data.longitude, plist->pNext->data.latitude, plist->pNext->data.longitude) - conventionalUnmvDist >= epsilon)
 				{
@@ -319,11 +481,12 @@ void PointerToGData::statisticizeData()
 					//lastTimeUnmoving[i] = firstTimeMoving[i]; // temporary current time unmoving
 					//pCurrTUnmv = plist;
 				}
+				else if (!plist->pNext->pNext) firstTimeMoving[i] = 0;
 			}
 			// sum of distance
 			totalDistance[i] += distanceEarth(plist->data.latitude, plist->data.longitude, plist->pNext->data.latitude, plist->pNext->data.longitude);
 			// sum of unmoving time and last time unmoving
-			if (distanceEarth(plist->pNext->data.latitude, plist->pNext->data.longitude, pCurrTUnmv->data.latitude, pCurrTUnmv->data.longitude) - conventionalUnmvDist < epsilon)
+			if (distanceEarth(plist->pNext->data.latitude, plist->pNext->data.longitude, pCurrTUnmv->data.latitude, pCurrTUnmv->data.longitude) - conventionalUnmvDist < epsilon) // <= 0
 			{
 				totalUnmovingTime[i] += plist->pNext->data.timestamp - plist->data.timestamp;
 				if (isMoving)
@@ -346,27 +509,27 @@ void PointerToGData::statisticizeData()
 	return;
 }
 //############################
-template<>
-bool L1List<L1List<NinjaInfo>>::find(char *ninjaID, int &idx)
-{
-	auto p{ _pHead };
-	int i{ 0 };
-	while (p)
-	{
-		if (ninjaID == p->data[0]) { idx = i; return 1; }
-		p = p->pNext;
-		i++;
-	}
-	idx = -1;
-	return 0;
-}
+//template<>
+//bool L1List<L1List<NinjaInfo>>::find(char *ninjaID, int &idx)
+//{
+//	auto p{ _pHead };
+//	int i{ 0 };
+//	while (p)
+//	{
+//		if (ninjaID == p->data[0]) { idx = i; return 1; }
+//		p = p->pNext;
+//		i++;
+//	}
+//	idx = -1;
+//	return 0;
+//}
 // return "-1"/string time (should be deallocated)
 const char* PointerToGData::findFirstTimeMovingOf(char *ninjaID)
 {
 	int idx;
 	if (pLL.find(ninjaID, idx))
 	{
-		if (firstTimeMoving[idx] == 0) return "-1";
+		if (firstTimeMoving[idx] == 0) return "empty";
 		char *des = new char[27];
 		strPrintTime(des, firstTimeMoving[idx]);
 		return des;
@@ -378,7 +541,7 @@ const char* PointerToGData::findLastTimeUnmovingOf(char *ninjaID)
 	int idx;
 	if (pLL.find(ninjaID, idx))
 	{
-		if (lastTimeUnmoving[idx] == 0) return "-1";
+		if (lastTimeUnmoving[idx] == 0) return "Non-stop";
 		char *des = new char[27];
 		strPrintTime(des, lastTimeUnmoving[idx]);
 		return des;
@@ -397,6 +560,7 @@ int PointerToGData::findNumberOfUnmovingTimesOf(char *ninjaID)
 string PointerToGData::findSumOfTravelingDistanceOf(char *ninjaID)
 {
 	int idx;
+	//if (pLL.isEmpty()) return "empty";
 	if (pLL.find(ninjaID, idx))
 	{
 		string str;
@@ -553,21 +717,21 @@ const char* PointerToGData::findMaxUnmovingTime()
 //		return 1; 
 //	return 0;
 //}
-template<>
-L1Item<char[ID_MAX_LENGTH]>::L1Item(char *a) : pNext{ nullptr }
-{
-	strcpy(data, a);
-}
-template<>
-int L1List<char[ID_MAX_LENGTH]>::insertHead(char *a)
-{
-	L1Item<char[ID_MAX_LENGTH]> *p = new L1Item<char[ID_MAX_LENGTH]>(a);
-	p->pNext = _pHead;
-	_pHead = p;
-	if (!pTail) pTail = _pHead;
-	_size++;
-	return 0;
-}
+//template<>
+//L1Item<char[ID_MAX_LENGTH]>::L1Item(char *a) : pNext{ nullptr }
+//{
+//	strcpy(data, a);
+//}
+//template<>
+//int L1List<char[ID_MAX_LENGTH]>::insertHead(char *a)
+//{
+//	L1Item<char[ID_MAX_LENGTH]> *p = new L1Item<char[ID_MAX_LENGTH]>(a);
+//	p->pNext = _pHead;
+//	_pHead = p;
+//	if (!pTail) pTail = _pHead;
+//	_size++;
+//	return 0;
+//}
 //void PointerToGData::findAndPrintListOfNinjaTrapped(PointOnEarth &A, PointOnEarth &B, PointOnEarth &C, PointOnEarth &D) // the trap is the square ABCD
 //{
 //	auto p{ pLL.getHead() };
@@ -637,59 +801,61 @@ int L1List<char[ID_MAX_LENGTH]>::insertHead(char *a)
 //	} 
 //}
 
-//##########################
-template<>
-int L1List<char[ID_MAX_LENGTH]>::push_back(char *a)
-{
-	if (_pHead == NULL) {
-		_pHead = new L1Item<char[ID_MAX_LENGTH]>(a);
-		pTail = _pHead;
-	}
-	else {
-		pTail->pNext = new L1Item<char[ID_MAX_LENGTH]>(a);
-		pTail = pTail->pNext;
-	}
-	_size++;
-	return 0;
-}
+////##########################
+//template<>
+//int L1List<char[ID_MAX_LENGTH]>::push_back(char *a)
+//{
+//	if (_pHead == NULL) {
+//		_pHead = new L1Item<char[ID_MAX_LENGTH]>(a);
+//		pTail = _pHead;
+//	}
+//	else {
+//		pTail->pNext = new L1Item<char[ID_MAX_LENGTH]>(a);
+//		pTail = pTail->pNext;
+//	}
+//	_size++;
+//	return 0;
+//}
 void PointerToGData::findAndPrintListOfNinjasLost()
 {
-	auto p{ pLL.getHead() };
+	L1Item<L1List<NinjaInfo>> *p{ pLL.getHead() };
 	if (!p) { cout << "-1\n"; return; }
 	L1List<PointOnEarth> traversingList;
 	L1List<char[ID_MAX_LENGTH]> ninjaLostList;
+	bool found{ 0 };
 	while (true)
 	{
 		// go through a data list of a specific ninja
-		auto pSubList{ p->data.getHead() };
+		L1Item<NinjaInfo> *pSubList{ p->data.getHead() };
 		if (pSubList)
 		{
 			PointOnEarth coordinate{ pSubList->data.longitude, pSubList->data.latitude };
 			traversingList.insertHead(coordinate);
 			pSubList = pSubList->pNext;
-			while (pSubList)
+			while (pSubList && !found)
 			{
 				// check whether the point is a moving point
-				coordinate.lat = pSubList->data.latitude; coordinate.longt = pSubList->data.longitude;
-				if (distanceEarth(coordinate.lat, coordinate.longt, traversingList.getTail()->data.lat, traversingList.getTail()->data.longt) - conventionalUnmvDist >= epsilon)
+				if (distanceEarth(pSubList->data.latitude, pSubList->data.longitude, traversingList.getTail()->data.lat, traversingList.getTail()->data.longt) - conventionalUnmvDist >= epsilon) // sub > 0
 				{
-					// scan traversingList for existence of a extremely close point
-					auto pTravL{ traversingList.getHead() };
-					auto pTrvLTail{ traversingList.getTail() };
-					while (!pTravL->pNext)
+					coordinate.longt = pSubList->data.longitude; coordinate.lat = pSubList->data.latitude;
+					traversingList.push_back(coordinate);
+					// scan traversingList for existence of a extremely close to the tail point 
+					L1Item<PointOnEarth> *pTravL{ traversingList.getHead() };
+					L1Item<PointOnEarth> *pTrvLTail{ traversingList.getTail() };
+					while (pTravL->pNext)
 					{
 						// if found
-						if (distanceEarth(pTrvLTail->data.lat, pTrvLTail->data.longt, pTravL->data.lat, pTravL->data.longt) - conventionalUnmvDist < epsilon)
+						if (distanceEarth(pTrvLTail->data.lat, pTrvLTail->data.longt, pTravL->data.lat, pTravL->data.longt) - conventionalUnmvDist < epsilon) // sub <= 0 // 
 						{
 							char *ch = new char[ID_MAX_LENGTH];
 							strcpy(ch, pSubList->data.id);
 							ninjaLostList.push_back(ch);
 							delete[] ch;
+							found = 1;
 							break;
 						}
 						pTravL = pTravL->pNext;
 					}
-					traversingList.push_back(coordinate);
 				}
 				pSubList = pSubList->pNext;
 			}
@@ -709,6 +875,7 @@ void PointerToGData::findAndPrintListOfNinjasLost()
 			return;
 		}
 		p = p->pNext;
+		found = 0;
 		traversingList.clean();
 	}
 }
@@ -726,8 +893,6 @@ void PointerToGData::findAndPrintListOfNinjasLost()
 //	return;
 //}
 
-
-
 // function handle envent
 bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData) 
 {
@@ -740,21 +905,23 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 			switch (c)
 			{
 			case'0': // '0'
-				if (event.code[1] == 0)
+				//if (event.code[1] == 0)
 				{
 					cout << event.code << ": ";
-					static_cast<PointerToGData*>(pGData)->pLE.traverse(printEvent);
+					if (static_cast<PointerToGData*>(pGData)->pLE.isEmpty()) { cout << "empty\n";}
+					else static_cast<PointerToGData*>(pGData)->pLE.traverse(printEvent);
 					return 1;
 				}
-				else
+				/*else
 				{
 					return 0;
-				}
+				}*/
 			case'1': // '1' or "1x..."
 				c = event.code[1];
 				if (c == 0) // '1'
 				{
-					cout << event.code << ": " << nList[0].id << '\n';
+					if (nList.isEmpty()) cout << event.code << ": " << "empty\n";
+					else cout << event.code << ": " << nList[0].id << '\n';
 					return 1;
 				}
 				else if (c >= '0' && c <= '4') // "1xABCD"
@@ -772,11 +939,11 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 							return 0;
 						}
 					case'1': // "11XYZT"
-						if (event.code[6] == 0)
+						if (event.code[2] != 0)
 						{
 							const char *ch{ static_cast<PointerToGData*>(pGData)->findAndKill(&(event.code[2])) }; // result return is in heap
 							cout << event.code << ": " << ch << '\n';
-							if (strcmp(ch,"-1") != 0) delete[] ch;
+							if (strcmp(ch,"-1")) delete[] ch;
 							return 1;
 						}
 						else
@@ -794,10 +961,10 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 							return 0;
 						}
 					case'3': // "13ABCDmnpqEFGHuvrs"
-						if (event.code[18] == 0)
+						if (event.code[2] != 0)
 						{
-							for (int i{ 2 }; i < 18; i++)
-								if (!isdigit(event.code[i])) return 0;
+							/*for (int i{ 2 }; i < 18; i++)
+								if (event.code[i] < '0' || event.code[i] > '9') return 0;*/
 							//PointOnEarth A{ 0.0, 0.0 }, B{ 0.0, 0.0 };
 							//{
 							//	double coordinate[4]{ 0.0, 0.0, 0.0, 0.0 }; //longtA{ 0.0 }, latA{ 0.0 }, longtB{ 0.0 }, latB{ 0.0 }
@@ -866,7 +1033,8 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 			case'2': // '2'
 				if (event.code[1] == 0)
 				{
-					cout << event.code << ": " << nList.getTail()->data.id << '\n';
+					if (nList.isEmpty()) cout << event.code << ": " << "empty\n";
+					else cout << event.code << ": " << nList.getTail()->data.id << '\n';
 					return 1;
 				}
 				else
@@ -894,11 +1062,11 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					return 0;
 				}
 			case'5': // "5ABCD"
-				if (event.code[5] == 0)
+				if (event.code[1] != 0)
 				{
 					const char *strTime{ static_cast<PointerToGData*>(pGData)->findFirstTimeMovingOf(&(event.code[1])) };
 					cout << event.code << ": " << strTime << '\n';
-					if (strcmp(strTime, "-1")) delete[] strTime;
+					if (strcmp(strTime, "-1") && strcmp(strTime, "empty")) delete[] strTime;
 					return 1;
 				}
 				else
@@ -906,11 +1074,11 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					return 0;
 				}
 			case'6': // "6ABCD"
-				if (event.code[5] == 0)
+				if (event.code[1] != 0)
 				{
 					const char *strTime{ static_cast<PointerToGData*>(pGData)->findLastTimeUnmovingOf(&(event.code[1])) };
 					cout << event.code << ": " << strTime << '\n';
-					if (strcmp(strTime, "-1")) delete[] strTime;
+					if (strcmp(strTime, "-1") && strcmp(strTime, "Non-stop")) delete[] strTime;
 					return 1;
 				}
 				else
@@ -918,9 +1086,12 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					return 0;
 				}
 			case'7': // "7ABCD"
-				if (event.code[5] == 0)
+				if (event.code[1] != 0)
 				{
-					cout << event.code << ": " << static_cast<PointerToGData*>(pGData)->findNumberOfUnmovingTimesOf(&event.code[1]) << '\n';
+					int tmp{ static_cast<PointerToGData*>(pGData)->findNumberOfUnmovingTimesOf(&event.code[1]) };
+					//if (tmp != 0)
+						cout << event.code << ": " << tmp << '\n';
+					//else cout << event.code << ": " << "nonstop\n";
 					return 1;
 				}
 				else
@@ -928,7 +1099,7 @@ bool processEvent(ninjaEvent_t& event, L1List<NinjaInfo_t>& nList, void *pGData)
 					return 0;
 				}
 			case'8': // "8ABCD"
-				if (event.code[5] == 0)
+				if (event.code[1] != 0)
 				{
 					cout << event.code << ": " << static_cast<PointerToGData*>(pGData)->findSumOfTravelingDistanceOf(&event.code[1]) << '\n';
 					return 1;

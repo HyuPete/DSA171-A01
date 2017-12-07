@@ -14,10 +14,7 @@ void display(L1List<NinjaInfo_t>& nList) {
 }
 
 int main(int narg, char** argv) {
-	
-	clock_t start = clock();
-   
-	L1List<ninjaEvent_t>  eventList;
+    L1List<ninjaEvent_t>  eventList;
     L1List<NinjaInfo_t>   db;// database of NinjaInfo
     loadEvents(argv[1], eventList);
     loadNinjaDB(argv[2], db);
@@ -27,10 +24,5 @@ int main(int narg, char** argv) {
     process(eventList, db);
 
     cout << resetiosflags(ios::showbase) << setprecision(-1);
-	
-	// caculate executing time (second)
-	clock_t stop = clock();
-	double elapsed{ static_cast<double>(stop - start) * 1000.0 / CLOCKS_PER_SEC };
-	cout << elapsed << '\n';
     return 0;
 }
